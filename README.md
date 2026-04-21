@@ -1,6 +1,6 @@
-# Distributed Agentic NER on Spark — Reproducibility Package
+# Distributed NER on Spark — Reproducibility Package
 
-Companion code and gold-set data for the paper *Distributed Agentic NER on Spark: A Teacher-Student Pipeline for Large-Scale Entity Extraction from Job Postings* (Soltani, 2026).
+Companion code and gold-set data for the paper *Distributed NER on Spark: A Teacher-Student Pipeline for Large-Scale Entity Extraction from Job Postings* (Soltani, 2026).
 
 This repository is **not** the paper. It is the minimum needed to reproduce the paper's numerical claims against the released models and annotated gold set.
 
@@ -73,7 +73,7 @@ python -m pipeline.scripts.longtail_scatter
 ```bibtex
 @unpublished{soltani2026distilledner,
   author = {Achraf Soltani},
-  title  = {Distributed Agentic NER on Spark: A Teacher-Student Pipeline for Large-Scale Entity Extraction from Job Postings},
+  title  = {Distributed NER on Spark: A Teacher-Student Pipeline for Large-Scale Entity Extraction from Job Postings},
   year   = {2026},
   note   = {Advisor: Prof.\ Hanine Mohamed},
 }

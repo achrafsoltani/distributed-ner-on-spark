@@ -1,6 +1,6 @@
 # Annotation Guidelines — Gold Set
 
-**Purpose:** This document specifies how to annotate the gold evaluation set for the distributed agentic NER research. The gold set is the human-annotated ground truth used to evaluate both LLM teachers (Sonnet 4.6, Haiku 4.5) and the six distilled student models in the Critic stage (Phase 7).
+**Purpose:** This document specifies how to annotate the gold evaluation set for the distributed teacher-student NER research. The gold set is the human-annotated ground truth used to evaluate both LLM teachers (Sonnet 4.6, Haiku 4.5) and the six distilled student models in the Critic stage (Phase 7).
 
 **Scope:** 515 postings drawn from the shared dev split. Annotated once; used for both teachers' Critic evaluations.
 
