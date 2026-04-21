@@ -1,0 +1,29 @@
+data:
+  dev: pipeline/training/haiku/dev.parquet
+  gold: pipeline/training/haiku/gold.parquet
+  train: pipeline/training/haiku/train.parquet
+experiment:
+  architecture: spacy
+  hub_model_id: AchrafSoltani/spacy-lg-jobposting-ner-haiku-v1
+  id: s2_spacy_haiku
+  teacher: haiku
+hyperparameters:
+  batch_size:
+    compound: 1.001
+    start: 100
+    stop: 1000
+  dropout: 0.2
+  epochs: 30
+  eval_frequency: 200
+  gpu_id: 0
+  learn_rate: 0.001
+  optimizer: Adam
+  patience: 5
+model:
+  base: en_core_web_lg
+  pipeline_components:
+  - tok2vec
+  - ner
+output:
+  dir: outputs/s2_spacy_haiku
+  push_to_hub: true

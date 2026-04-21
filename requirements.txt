@@ -1,0 +1,19 @@
+# Distributed Agentic NER on Spark — Python dependencies
+#
+# Install into a project venv:
+#   python3 -m venv .venv && source .venv/bin/activate
+#   pip install -r requirements.txt
+
+# LLM teacher (via AWS Bedrock)
+anthropic>=0.40.0
+boto3>=1.35.0
+
+# Data wrangling
+pandas>=2.2.0
+pyarrow>=17.0.0
+
+# Configuration
+python-dotenv>=1.0.0
+
+# Dev quality-of-life
+tqdm>=4.66.0

@@ -1,0 +1,37 @@
+DUAL LICENSE
+============
+
+This project uses dual licensing:
+
+1. CODE — Apache License 2.0
+   See LICENSE-CODE for the full text.
+
+   Applies to:
+   - pipeline/ (Podman Compose, Hadoop config, scripts)
+   - poc/ (Python proof-of-concept code)
+   - Any .py, .sh, .yml, .xml configuration files
+
+2. RESEARCH CONTENT — Creative Commons Attribution-NonCommercial 4.0 International (CC BY-NC 4.0)
+   See LICENSE-RESEARCH for the full text.
+
+   Applies to:
+   - paper/ (LaTeX sources, compiled paper.pdf, bibliography)
+   - research-proposal.md / .pdf (EN + FR)
+   - architecture.md / .pdf
+   - presentation.md / .pdf
+   - IMPLEMENTATION-GUIDE.md / .pdf
+   - images/ (SVG and PNG diagrams)
+   - README.md
+
+COMMERCIAL USE OF RESEARCH CONTENT
+==================================
+
+For commercial licensing of the research content (paper, diagrams, methodology),
+please contact the author:
+
+  Achraf SOLTANI
+  achraf.soltani@pm.me
+  https://www.achrafsoltani.com
+
+Copyright (c) 2026 Achraf SOLTANI. All rights reserved for content not covered
+by the above licenses.

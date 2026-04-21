@@ -1,0 +1,19 @@
+data:
+  dev: pipeline/training/haiku/dev.parquet
+  gold: pipeline/training/haiku/gold.parquet
+experiment:
+  architecture: jobbert_onnx
+  depends_on: s4_jobbert_haiku
+  hub_model_id: AchrafSoltani/jobbert-ner-haiku-v1-onnx
+  id: s6_jobbert_onnx_haiku
+  teacher: haiku
+output:
+  dir: outputs/s6_jobbert_onnx_haiku
+  push_to_hub: true
+quantization:
+  format: onnx
+  optimization_level: 1
+  precision: int8
+source_model:
+  hub_model_id: AchrafSoltani/jobbert-ner-haiku-v1
+  local_dir: outputs/s4_jobbert_haiku/checkpoint-best

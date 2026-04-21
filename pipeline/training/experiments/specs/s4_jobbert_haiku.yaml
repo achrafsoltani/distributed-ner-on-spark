@@ -1,0 +1,29 @@
+data:
+  dev: pipeline/training/haiku/dev.parquet
+  gold: pipeline/training/haiku/gold.parquet
+  train: pipeline/training/haiku/train.parquet
+experiment:
+  architecture: jobbert
+  hub_model_id: AchrafSoltani/jobbert-ner-haiku-v1
+  id: s4_jobbert_haiku
+  teacher: haiku
+hyperparameters:
+  epochs: 5
+  eval_strategy: epoch
+  fp16: true
+  gpu_id: 0
+  learning_rate: 2.0e-05
+  load_best_model_at_end: true
+  max_seq_length: 512
+  metric_for_best_model: f1
+  per_device_eval_batch_size: 32
+  per_device_train_batch_size: 16
+  save_strategy: epoch
+  warmup_ratio: 0.1
+  weight_decay: 0.01
+model:
+  base: jjzha/jobbert-base-cased
+  num_labels: 17
+output:
+  dir: outputs/s4_jobbert_haiku
+  push_to_hub: true

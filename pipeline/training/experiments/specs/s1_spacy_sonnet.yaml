@@ -1,0 +1,29 @@
+experiment:
+  id: s1_spacy_sonnet
+  architecture: spacy
+  teacher: sonnet
+  hub_model_id: AchrafSoltani/spacy-lg-jobposting-ner-sonnet-v1
+data:
+  train: pipeline/training/sonnet/train.parquet
+  dev: pipeline/training/sonnet/dev.parquet
+  gold: pipeline/training/sonnet/gold.parquet
+model:
+  base: en_core_web_lg
+  pipeline_components:
+  - tok2vec
+  - ner
+hyperparameters:
+  epochs: 30
+  batch_size:
+    start: 100
+    stop: 1000
+    compound: 1.001
+  dropout: 0.2
+  learn_rate: 0.001
+  optimizer: Adam
+  patience: 5
+  eval_frequency: 200
+  gpu_id: 0
+output:
+  dir: outputs/s1_spacy_sonnet
+  push_to_hub: true
