@@ -1,4 +1,4 @@
-# Distributed Agentic NER on Spark — Python dependencies
+# Distributed NER on Spark — Python dependencies
 #
 # Install into a project venv:
 #   python3 -m venv .venv && source .venv/bin/activate
