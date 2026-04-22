@@ -19,8 +19,18 @@ import spacy
 
 ROOT = Path(__file__).resolve().parents[2]
 MODEL = ROOT / "pipeline/training/experiments/outputs/s2_spacy_haiku/model-best"
+HUB_ID = "AchrafSoltani/spacy-lg-jobposting-ner-haiku-v1"
 GOLD = ROOT / "pipeline/training/haiku/gold.parquet"
 OUT = ROOT / "pipeline/training/s2_error_analysis.json"
+
+
+def resolve_s2_path() -> str:
+    """Local first, HuggingFace Hub fallback. Mirrors the resolver in bootstrap_ci.py."""
+    if MODEL.exists():
+        return str(MODEL)
+    print(f"Local S2 model not found at {MODEL}; pulling from HF Hub: {HUB_ID}")
+    from huggingface_hub import snapshot_download
+    return snapshot_download(repo_id=HUB_ID)
 
 
 def entity_set(entities):
@@ -37,7 +47,7 @@ def entity_set(entities):
 
 def main():
     random.seed(0)
-    nlp = spacy.load(str(MODEL))
+    nlp = spacy.load(resolve_s2_path())
     gold_df = pd.read_parquet(GOLD)
 
     fp_by_type = defaultdict(list)

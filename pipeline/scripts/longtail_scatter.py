@@ -3,10 +3,24 @@ Produce a long-tail latency scatter plot for §4.5: per-posting processing_ms
 vs posting length (characters) and entity count, over the full 1.3M corpus.
 
 Writes to paper/figures/longtail_scatter.pdf.
+
+Inputs required (NOT in the public reproducibility package — these are the
+1.3-million-posting Phase 8 inference outputs and the primary Kaggle dataset,
+which are listed in the paper's "Data and Code Availability" section as
+"available from the authors on request"):
+
+  pipeline/output/extraction/s2_spacy_haiku/raw/*.parquet   (~647 MB across 43 files)
+  data-primary/job_summary.csv                              (~5.8 GiB)
+
+If you want to reproduce only the eight Table 5 CIs, you do NOT need this
+script — use bootstrap_ci.py instead. Contact the authors if you need the
+Phase 8 outputs.
 """
 
 from __future__ import annotations
 
+import sys
+from glob import glob
 from pathlib import Path
 
 import duckdb
@@ -22,7 +36,27 @@ INPUT_CSV = str(ROOT / "data-primary/job_summary.csv")
 FIG_OUT = ROOT / "paper/figures/longtail_scatter.pdf"
 
 
+def _check_inputs_or_explain() -> None:
+    """Fail loudly with a helpful message if the Phase 8 inputs are not present."""
+    raw_matches = glob(RAW_GLOB)
+    csv_present = Path(INPUT_CSV).exists()
+    if raw_matches and csv_present:
+        return
+    print("ERROR: longtail_scatter.py requires the Phase 8 inference outputs and the primary corpus,", file=sys.stderr)
+    print("       both of which are NOT included in the public reproducibility package.", file=sys.stderr)
+    print(f"       Missing: ", file=sys.stderr)
+    if not raw_matches:
+        print(f"         (1) {RAW_GLOB}  — Phase 8 raw inference parquet (~647 MB)", file=sys.stderr)
+    if not csv_present:
+        print(f"         (2) {INPUT_CSV}  — primary Kaggle dataset (~5.8 GiB)", file=sys.stderr)
+    print("       These are listed in the paper's Data and Code Availability section as", file=sys.stderr)
+    print("       'available from the authors on request'. To reproduce only the eight Table 5", file=sys.stderr)
+    print("       confidence intervals (which do NOT require these inputs), use bootstrap_ci.py.", file=sys.stderr)
+    sys.exit(2)
+
+
 def main():
+    _check_inputs_or_explain()
     FIG_OUT.parent.mkdir(parents=True, exist_ok=True)
     con = duckdb.connect(config={"memory_limit": "30GB"})
     # Read per-posting timing + entity count from raw, join char length from input

@@ -75,21 +75,75 @@ def bootstrap_f1(contribs: list[tuple[int, int, int]], n_boot: int, rng) -> dict
     }
 
 
+# --- Model resolution: local first, then HuggingFace Hub fallback ---
+
+HUB_IDS = {
+    "s1_spacy_sonnet":      "AchrafSoltani/spacy-lg-jobposting-ner-sonnet-v1",
+    "s2_spacy_haiku":       "AchrafSoltani/spacy-lg-jobposting-ner-haiku-v1",
+    "s3_jobbert_sonnet":    "AchrafSoltani/jobbert-ner-sonnet-v1",
+    "s4_jobbert_haiku":     "AchrafSoltani/jobbert-ner-haiku-v1",
+    "s5_jobbert_onnx_sonnet": "AchrafSoltani/jobbert-ner-sonnet-v1-onnx",
+    "s6_jobbert_onnx_haiku":  "AchrafSoltani/jobbert-ner-haiku-v1-onnx",
+}
+
+
+def resolve_model_path(local_path: Path, sid: str, kind: str) -> str:
+    """Return a usable model path: local if present, otherwise download from HuggingFace Hub.
+
+    `kind` is "spacy", "jobbert", or "onnx" (for diagnostics).
+    spaCy models are materialised to a local snapshot via huggingface_hub.snapshot_download;
+    JobBERT and ONNX models are loaded directly via their Hub repo IDs (transformers / optimum
+    accept Hub IDs natively).
+    """
+    if local_path.exists():
+        return str(local_path)
+    hub_id = HUB_IDS[sid]
+    print(f"  Local model not found at {local_path}; pulling from HF Hub: {hub_id}")
+    if kind == "spacy":
+        from huggingface_hub import snapshot_download
+        return snapshot_download(repo_id=hub_id)
+    return hub_id
+
+
 def teacher_predictions(teacher: str) -> dict:
-    """Load teacher predictions from labels/{teacher}/batch_*.jsonl."""
+    """Load teacher predictions on the gold set.
+
+    Resolution order:
+      1. `pipeline/labels-public/{teacher}/gold-predictions.jsonl` (516/515 records,
+         shipped in the public reproducibility package — sufficient to reproduce
+         the teacher-vs-gold CIs in Table 5).
+      2. `pipeline/labels/{teacher}/batch_*.jsonl` (5K full records, internal mirror only).
+      3. Loud failure with a pointer at the paper's Data and Code Availability section.
+    """
     preds = {}
-    for batch in (ROOT / f"pipeline/labels/{teacher}").glob("batch_*.jsonl"):
-        with open(batch) as f:
+    public_file = ROOT / f"pipeline/labels-public/{teacher}/gold-predictions.jsonl"
+    if public_file.exists():
+        with public_file.open() as f:
             for line in f:
                 rec = json.loads(line)
                 preds[rec["job_link"]] = rec.get("entities", [])
-    return preds
+        return preds
+    batches = list((ROOT / f"pipeline/labels/{teacher}").glob("batch_*.jsonl"))
+    if batches:
+        for batch in batches:
+            with batch.open() as f:
+                for line in f:
+                    rec = json.loads(line)
+                    preds[rec["job_link"]] = rec.get("entities", [])
+        return preds
+    raise FileNotFoundError(
+        f"No teacher-{teacher} predictions found. Expected one of:\n"
+        f"  (1) {public_file.relative_to(ROOT)}  (public-package gold-set predictions)\n"
+        f"  (2) pipeline/labels/{teacher}/batch_*.jsonl  (internal-mirror full labels)\n"
+        f"See the paper's Data and Code Availability section."
+    )
 
 
-def spacy_predictions(model_path: Path, gold_df: pd.DataFrame) -> dict:
+def spacy_predictions(model_path: Path, gold_df: pd.DataFrame, sid: str) -> dict:
     import spacy
 
-    nlp = spacy.load(str(model_path))
+    resolved = resolve_model_path(model_path, sid, "spacy")
+    nlp = spacy.load(resolved)
     preds = {}
     for _, row in gold_df.iterrows():
         doc = nlp(row["job_summary"])
@@ -99,10 +153,11 @@ def spacy_predictions(model_path: Path, gold_df: pd.DataFrame) -> dict:
     return preds
 
 
-def jobbert_predictions(model_path: Path, gold_df: pd.DataFrame) -> dict:
+def jobbert_predictions(model_path: Path, gold_df: pd.DataFrame, sid: str) -> dict:
     from transformers import AutoTokenizer, AutoModelForTokenClassification, pipeline
-    tok = AutoTokenizer.from_pretrained(str(model_path))
-    mdl = AutoModelForTokenClassification.from_pretrained(str(model_path))
+    resolved = resolve_model_path(model_path, sid, "jobbert")
+    tok = AutoTokenizer.from_pretrained(resolved)
+    mdl = AutoModelForTokenClassification.from_pretrained(resolved)
     ner = pipeline("token-classification", model=mdl, tokenizer=tok,
                    aggregation_strategy="simple")
     preds = {}
@@ -119,12 +174,13 @@ def jobbert_predictions(model_path: Path, gold_df: pd.DataFrame) -> dict:
     return preds
 
 
-def onnx_predictions(model_path: Path, gold_df: pd.DataFrame) -> dict:
+def onnx_predictions(model_path: Path, gold_df: pd.DataFrame, sid: str) -> dict:
     from transformers import AutoTokenizer, pipeline
     from optimum.onnxruntime import ORTModelForTokenClassification
-    tok = AutoTokenizer.from_pretrained(str(model_path))
+    resolved = resolve_model_path(model_path, sid, "onnx")
+    tok = AutoTokenizer.from_pretrained(resolved)
     mdl = ORTModelForTokenClassification.from_pretrained(
-        str(model_path), file_name="model_quantized.onnx")
+        resolved, file_name="model_quantized.onnx")
     ner = pipeline("token-classification", model=mdl, tokenizer=tok,
                    aggregation_strategy="simple")
     preds = {}
@@ -159,7 +215,7 @@ def main() -> None:
         print(f"teacher_{teacher}: F1={r['point_estimate']:.4f} "
               f"CI=[{r['f1_ci_lo']:.4f}, {r['f1_ci_hi']:.4f}] n={r['n_postings']}")
 
-    # Students S1/S2 (spaCy)
+    # Students S1/S2 (spaCy) — local first, HF Hub fallback
     for sid, teacher, gold_df in [
         ("s1_spacy_sonnet", "sonnet", gold_s),
         ("s2_spacy_haiku", "haiku", gold_h),
@@ -167,11 +223,8 @@ def main() -> None:
         model_path = ROOT / f"pipeline/training/experiments/outputs/{sid}/model-best/model-best"
         if not model_path.exists():
             model_path = ROOT / f"pipeline/training/experiments/outputs/{sid}/model-best"
-        if not model_path.exists():
-            print(f"Skipping {sid}: model not at {model_path}")
-            continue
         gold_map = dict(zip(gold_df["job_link"], gold_df["entities"]))
-        pred_map = spacy_predictions(model_path, gold_df)
+        pred_map = spacy_predictions(model_path, gold_df, sid)
         contribs = per_posting_contributions(gold_map, pred_map)
         r = bootstrap_f1(contribs, N_BOOTSTRAP, rng)
         r["point_estimate"] = _point_f1(contribs)
@@ -179,16 +232,13 @@ def main() -> None:
         print(f"{sid}: F1={r['point_estimate']:.4f} "
               f"CI=[{r['f1_ci_lo']:.4f}, {r['f1_ci_hi']:.4f}] n={r['n_postings']}")
 
-    # Students S3/S4 (dense JobBERT via transformers)
+    # Students S3/S4 (dense JobBERT via transformers) — local first, HF Hub fallback
     for sid, gold_df in [
         ("s3_jobbert_sonnet", gold_s),
         ("s4_jobbert_haiku", gold_h),
     ]:
         model_path = ROOT / f"pipeline/training/experiments/outputs/{sid}/checkpoint-best/checkpoint-best"
-        if not model_path.exists():
-            print(f"Skipping {sid}: model not at {model_path}")
-            continue
-        pred_map = jobbert_predictions(model_path, gold_df)
+        pred_map = jobbert_predictions(model_path, gold_df, sid)
         gold_map = dict(zip(gold_df["job_link"], gold_df["entities"]))
         contribs = per_posting_contributions(gold_map, pred_map)
         r = bootstrap_f1(contribs, N_BOOTSTRAP, rng)
@@ -197,7 +247,7 @@ def main() -> None:
         print(f"{sid}: F1={r['point_estimate']:.4f} "
               f"CI=[{r['f1_ci_lo']:.4f}, {r['f1_ci_hi']:.4f}] n={r['n_postings']}")
 
-    # Students S5/S6 (ONNX int8 via optimum)
+    # Students S5/S6 (ONNX int8 via optimum) — local first, HF Hub fallback
     for sid, gold_df in [
         ("s5_jobbert_onnx_sonnet", gold_s),
         ("s6_jobbert_onnx_haiku", gold_h),
@@ -206,10 +256,7 @@ def main() -> None:
         model_path = base / "model-quantized" / "model-quantized"
         if not model_path.exists():
             model_path = base / "model-quantized"
-        if not model_path.exists():
-            print(f"Skipping {sid}: model not at {model_path}")
-            continue
-        pred_map = onnx_predictions(model_path, gold_df)
+        pred_map = onnx_predictions(model_path, gold_df, sid)
         gold_map = dict(zip(gold_df["job_link"], gold_df["entities"]))
         contribs = per_posting_contributions(gold_map, pred_map)
         r = bootstrap_f1(contribs, N_BOOTSTRAP, rng)
