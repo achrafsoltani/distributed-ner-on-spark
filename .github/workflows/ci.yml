@@ -38,7 +38,7 @@ jobs:
       - name: Verify top-level imports resolve
         run: |
           python - <<'PY'
-          import importlib, sys
+          import importlib.util, sys
           mods = [
               "pandas", "pyarrow", "numpy", "duckdb", "sklearn",
               "transformers", "optimum", "spacy", "huggingface_hub",
