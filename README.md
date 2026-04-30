@@ -2,7 +2,7 @@
 
 Companion code and gold-set data for the paper *Distributed NER on Spark: A Teacher-Student Pipeline for Large-Scale Entity Extraction from Job Postings* (Soltani and Hanine, 2026).
 
-This repository is **not** the paper. It is the minimum needed to reproduce the paper's numerical claims — including the eight Table 5 confidence intervals, the non-distillation B0 baseline, the §4.3.1 error-mode catalogue, the §4.3.2 sliding-window-inference ablation, the §4.3.3 chunked-window-training follow-up, and the §4.5 long-tail latency figure — against the released models, the annotated gold set, and the on-request artefacts documented at the end.
+This repository is **not** the paper. It is the minimum needed to reproduce the paper's numerical claims — including the eight student/teacher bootstrap CIs in the student-vs-gold table, the non-distillation B0 baseline, the §4.3.1 error-mode catalogue, the §4.3.2 sliding-window-inference ablation, the §4.3.3 chunked-window-training follow-up, and the §4.5 long-tail latency figure — against the released models, the annotated gold set, and the on-request artefacts documented at the end.
 
 A reproducibility walk on a fresh clone (2026-04-22) verified that all four main scripts PASS or PASS-within-bootstrap-noise; see HEAD `c201656` and the patches that landed in `2bf3455` + `59e2287` + `c201656`.
 
@@ -26,20 +26,20 @@ pipeline/
 ├── annotation/
 │   └── ANNOTATION-GUIDELINES.md              — rules the 516-posting gold set follows (8 entity types, R1–R8, edge cases)
 ├── labels-public/
-│   ├── sonnet/gold-predictions.jsonl         — 516 Sonnet teacher predictions on the gold set (sufficient to reproduce the teacher cells of Table 5)
+│   ├── sonnet/gold-predictions.jsonl         — 516 Sonnet teacher predictions on the gold set (sufficient to reproduce the teacher-vs-gold evaluation from this package alone)
 │   └── haiku/gold-predictions.jsonl          — 515 Haiku teacher predictions on the gold set
 ├── output-sample/
 │   └── scaler-sample-10k.parquet             — 10,000-posting reservoir sample of the 1.3M Phase 8 output (sample-mode default for longtail_scatter.py; sample stats match population to within sampling noise)
 ├── scripts/
-│   ├── bootstrap_ci.py                       — reproduces the 95% bootstrap CIs (Tables 4–5); Hub-aware: pulls student weights on demand if not present locally
+│   ├── bootstrap_ci.py                       — reproduces the 95% bootstrap CIs for the teacher-vs-gold and student-vs-gold tables; Hub-aware: pulls student weights on demand if not present locally
 │   ├── evaluate_student.py                   — reusable per-student evaluation (single-shot inference)
 │   ├── evaluate_student_sliding.py           — sliding-window inference predictor (§4.3.2)
 │   ├── bootstrap_ci_sliding.py               — 4-cell bootstrap CIs for sliding-window inference on S3/S4/S5/S6 (§4.3.2)
 │   ├── train_jobbert_chunked.py              — chunked-window training (§4.3.3); self-contained, ~470 lines
 │   ├── bootstrap_ci_chunked.py               — bootstrap CIs for chunked-trained S3'/S4' weights (§4.3.3); self-contained
-│   ├── gold_only_baseline.py                 — reproduces the B0 non-distillation baseline (Table 5 top row)
+│   ├── gold_only_baseline.py                 — reproduces the B0 non-distillation baseline (top row of the student-vs-gold table)
 │   ├── s2_error_analysis.py                  — reproduces the S2 error-mode catalogue (§4.3.1); Hub-aware
-│   └── longtail_scatter.py                   — reproduces the long-tail latency figure (§4.5); uses output-sample/ by default, falls back to full Phase 8 outputs if available locally
+│   └── longtail_scatter.py                   — reproduces the §4.5 long-tail latency scatter; uses output-sample/ by default, falls back to full Phase 8 outputs if available locally
 └── training/
     ├── haiku/gold.parquet                    — 515 gold postings on the Haiku dev intersection
     ├── sonnet/gold.parquet                   — 516 gold postings on the Sonnet dev intersection
@@ -58,16 +58,16 @@ pip install torch --index-url https://download.pytorch.org/whl/cpu  # CPU torch 
 pip install -r requirements.txt
 python -m spacy download en_core_web_lg
 
-# Eight Table 5 student/teacher CIs (Hub-aware: downloads ~2 GB of model weights on first run, cached thereafter)
+# Eight student/teacher bootstrap CIs on the gold set (Hub-aware: downloads ~2 GB of model weights on first run, cached thereafter)
 python -m pipeline.scripts.bootstrap_ci
 
-# B0 non-distillation baseline (5-fold CV + bootstrap), Table 5 top row
+# B0 non-distillation baseline (5-fold CV + bootstrap), top row of the student-vs-gold table
 python -m pipeline.scripts.gold_only_baseline
 
-# S2 error-mode catalogue (§4.3.1, Table 6)
+# S2 error-mode catalogue (§4.3.1)
 python -m pipeline.scripts.s2_error_analysis
 
-# Long-tail latency scatter (§4.5, Fig 5) — uses the shipped 10K sample by default
+# Long-tail latency scatter (§4.5) — uses the shipped 10K sample by default
 python -m pipeline.scripts.longtail_scatter
 ```
 
