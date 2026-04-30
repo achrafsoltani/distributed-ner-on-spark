@@ -8,7 +8,7 @@ A reproducibility walk on a fresh clone (2026-04-22) verified that all four main
 
 ## Published models
 
-The six student models trained and evaluated in the paper are on HuggingFace Hub:
+Ten student models trained and evaluated in the paper are on HuggingFace Hub. The six v1 students cover the 3-architecture × 2-teacher matrix from the main paper; the four v2 chunked variants (added 2026-04-25) extend the JobBERT students with 450-token chunked-window training to lift F1 by +0.044 and to remove the 512-token coverage cap.
 
 | Student | Architecture | Teacher | Hub identifier |
 |---|---|---|---|
@@ -18,6 +18,19 @@ The six student models trained and evaluated in the paper are on HuggingFace Hub
 | S4 | `jjzha/jobbert-base-cased` | Claude Haiku 4.5 | [`AchrafSoltani/jobbert-ner-haiku-v1`](https://huggingface.co/AchrafSoltani/jobbert-ner-haiku-v1) |
 | S5 | JobBERT → ONNX int8 | Claude Sonnet 4.6 | [`AchrafSoltani/jobbert-ner-sonnet-v1-onnx`](https://huggingface.co/AchrafSoltani/jobbert-ner-sonnet-v1-onnx) |
 | S6 | JobBERT → ONNX int8 | Claude Haiku 4.5 | [`AchrafSoltani/jobbert-ner-haiku-v1-onnx`](https://huggingface.co/AchrafSoltani/jobbert-ner-haiku-v1-onnx) |
+| S3' | JobBERT chunked v2 (450-token windows, 225 stride) | Claude Sonnet 4.6 | [`AchrafSoltani/jobbert-ner-sonnet-v2`](https://huggingface.co/AchrafSoltani/jobbert-ner-sonnet-v2) |
+| S4' | JobBERT chunked v2 (450-token windows, 225 stride) | Claude Haiku 4.5 | [`AchrafSoltani/jobbert-ner-haiku-v2`](https://huggingface.co/AchrafSoltani/jobbert-ner-haiku-v2) |
+| S5' | S3' → ONNX int8 | Claude Sonnet 4.6 | [`AchrafSoltani/jobbert-ner-sonnet-v2-onnx`](https://huggingface.co/AchrafSoltani/jobbert-ner-sonnet-v2-onnx) |
+| S6' | S4' → ONNX int8 | Claude Haiku 4.5 | [`AchrafSoltani/jobbert-ner-haiku-v2-onnx`](https://huggingface.co/AchrafSoltani/jobbert-ner-haiku-v2-onnx) |
+
+**v2 chunked headline numbers** (gold-set 95 % bootstrap CIs, 10 000 posting-level resamples, seed 42; reproducible via `pipeline/scripts/bootstrap_ci_chunked.py`):
+
+- S3' Sonnet: F1 = 0.3255 [0.312, 0.339] (+0.044 over S3)
+- S4' Haiku:  F1 = 0.3284 [0.313, 0.344] (+0.044 over S4)
+- S5' Sonnet ONNX-int8: F1 = 0.3022 [0.289, 0.315] (~7 % F1 cost vs S3' for ~4× size reduction)
+- S6' Haiku ONNX-int8:  F1 = 0.3089 [0.294, 0.324]
+
+The v2 family closes ~17–20 % of the JobBERT-vs-spaCy F1 gap. The residual is concentrated on noun-phrase soft-boundary entity types (SKILL, EDUCATION, EXPERIENCE_LEVEL) and survives both chunked-inference and chunked-training interventions, suggesting an architecture-task-fit constraint rather than a coverage artefact. The production pick **remains S2** for full-text + sub-100 ms latency on commodity CPU; the v2 family is published for downstream use cases where chunked-window extraction is preferred.
 
 ## What's in this repository
 
