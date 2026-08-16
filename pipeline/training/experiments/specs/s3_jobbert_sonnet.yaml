@@ -1,0 +1,29 @@
+experiment:
+  id: s3_jobbert_sonnet
+  architecture: jobbert
+  teacher: sonnet
+  hub_model_id: AchrafSoltani/jobbert-ner-sonnet-v1
+data:
+  train: pipeline/training/sonnet/train.parquet
+  dev: pipeline/training/sonnet/dev.parquet
+  gold: pipeline/training/sonnet/gold.parquet
+model:
+  base: jjzha/jobbert-base-cased
+  num_labels: 17
+hyperparameters:
+  epochs: 5
+  per_device_train_batch_size: 16
+  per_device_eval_batch_size: 32
+  learning_rate: 2.0e-05
+  weight_decay: 0.01
+  warmup_ratio: 0.1
+  eval_strategy: epoch
+  save_strategy: epoch
+  load_best_model_at_end: true
+  metric_for_best_model: f1
+  fp16: true
+  max_seq_length: 512
+  gpu_id: 0
+output:
+  dir: outputs/s3_jobbert_sonnet
+  push_to_hub: true

@@ -1,0 +1,32 @@
+data:
+  dev: pipeline/training/sonnet/dev.parquet
+  gold: pipeline/training/sonnet/gold.parquet
+  train: pipeline/training/sonnet/train.parquet
+experiment:
+  architecture: jobbert-chunked
+  hub_model_id: AchrafSoltani/jobbert-ner-sonnet-v2
+  id: s3_jobbert_chunked_sonnet
+  teacher: sonnet
+chunking:
+  window_tokens: 450
+  stride_tokens: 225
+hyperparameters:
+  epochs: 3
+  eval_strategy: epoch
+  fp16: true
+  gpu_id: 0
+  learning_rate: 2.0e-05
+  load_best_model_at_end: true
+  max_seq_length: 512
+  metric_for_best_model: f1
+  per_device_eval_batch_size: 32
+  per_device_train_batch_size: 16
+  save_strategy: epoch
+  warmup_ratio: 0.1
+  weight_decay: 0.01
+model:
+  base: jjzha/jobbert-base-cased
+  num_labels: 17
+output:
+  dir: outputs/s3_jobbert_chunked_sonnet
+  push_to_hub: false

@@ -1,0 +1,25 @@
+# Python
+__pycache__/
+*.pyc
+*.pyo
+.venv/
+.ruff_cache/
+.mypy_cache/
+.pytest_cache/
+.coverage
+
+# Secrets
+.env
+.env.*
+!.env.example
+
+# HuggingFace xet-backend cache
+xet/
+
+# OS / IDE
+.DS_Store
+.idea/
+.vscode/
+.ipynb_checkpoints/
+*.swp
+*.swo

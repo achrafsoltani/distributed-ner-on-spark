@@ -1,0 +1,19 @@
+experiment:
+  id: s5_jobbert_onnx_sonnet
+  architecture: jobbert_onnx
+  teacher: sonnet
+  hub_model_id: AchrafSoltani/jobbert-ner-sonnet-v1-onnx
+  depends_on: s3_jobbert_sonnet
+source_model:
+  hub_model_id: AchrafSoltani/jobbert-ner-sonnet-v1
+  local_dir: outputs/s3_jobbert_sonnet/checkpoint-best
+data:
+  dev: pipeline/training/sonnet/dev.parquet
+  gold: pipeline/training/sonnet/gold.parquet
+quantization:
+  format: onnx
+  precision: int8
+  optimization_level: 1
+output:
+  dir: outputs/s5_jobbert_onnx_sonnet
+  push_to_hub: true
