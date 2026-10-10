@@ -5,8 +5,8 @@ Posting-level bootstrap CI for the two chunked-trained JobBERT students
 
 Companion to bootstrap_ci.py / bootstrap_ci_sliding.py. Same SEED (42),
 same N_BOOTSTRAP (10,000), same posting-level resampling --- only the
-predictor and the model checkpoints change. Use the three outputs together
-to fill the chunked-training row block in paper Table 5.
+predictor and the model checkpoints change, so the three outputs are directly
+comparable.
 
 Self-contained: the sliding predictor and the bootstrap statistics are
 inlined here rather than imported from the v1 evaluation modules. This
@@ -19,11 +19,12 @@ Sources
     `train_jobbert_chunked.py` under
     pipeline/training/experiments/outputs/s{3,4}_jobbert_chunked_*/
     checkpoint-best/.
---source hub:             pulls the (yet-to-be-published) v2 repos
-    AchrafSoltani/jobbert-ner-{sonnet,haiku}-v2.
+--source hub:             pulls the published v2 repos
+    AchrafSoltani/jobbert-ner-{sonnet,haiku}-v2 (no authentication needed).
 
 Usage
 -----
+    python -m pipeline.scripts.bootstrap_ci_chunked --source hub
     python -m pipeline.scripts.bootstrap_ci_chunked --source local
 
 Writes pipeline/training/bootstrap_ci_chunked.json.

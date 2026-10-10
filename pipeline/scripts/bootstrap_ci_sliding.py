@@ -4,15 +4,15 @@ sliding-window inference rather than the single-shot 512-token pipeline call
 used in pipeline.scripts.bootstrap_ci.
 
 Companion to bootstrap_ci.py. Same SEED (42), same N_BOOTSTRAP (10,000),
-same posting-level resampling --- only the predictor changes. Use the
-two outputs together to populate the sliding-window addendum to Table 5.
+same posting-level resampling --- only the predictor changes, so comparing
+the two outputs isolates the effect of the inference loop.
 
 Sources
 -------
 --source hub (default): pulls the public Hugging Face Hub repos under
-    AchrafSoltani/*. No auth needed; avoids staging model weights on S3.
---source local:         uses Phase 6 model directories under
-    pipeline/training/experiments/outputs/.
+    AchrafSoltani/*; no authentication needed.
+--source local:         uses local model directories under
+    pipeline/training/experiments/outputs/ (training outputs, not shipped).
 
 Usage
 -----

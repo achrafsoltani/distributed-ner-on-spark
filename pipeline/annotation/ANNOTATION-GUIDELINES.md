@@ -1,8 +1,8 @@
 # Annotation Guidelines — Gold Set
 
-**Purpose:** This document specifies how to annotate the gold evaluation set for the distributed teacher-student NER research. The gold set is the human-annotated ground truth used to evaluate both LLM teachers (Sonnet 4.6, Haiku 4.5) and the six distilled student models in the Critic stage (Phase 7).
+**Purpose:** This document specifies how to annotate the gold evaluation set for the distributed teacher-student NER research. The gold set is the human-annotated ground truth used to evaluate both LLM teachers (Sonnet 4.6, Haiku 4.5) and the distilled student models in the Critic stage.
 
-**Scope:** 515 postings drawn from the shared dev split. Annotated once; used for both teachers' Critic evaluations.
+**Scope:** 516 postings drawn from the dev split, 515 of which also carry Haiku teacher output. Annotated once; used for both teachers' evaluations.
 
 **Principle:** Annotate blind. Do not view the teacher labels during the annotation pass. Compare afterwards.
 
@@ -146,9 +146,9 @@ If a posting has no entities of a given type, skip that type. Postings with zero
 
 ---
 
-## Calibration Pilot (Step 3 of the workflow)
+## Calibration Pilot
 
-Before starting the main 515-posting annotation:
+Before starting the main 516-posting annotation:
 
 1. Annotate 20 postings blind.
 2. Open each teacher's `dev.parquet` and compare your annotations to Sonnet and Haiku on the same 20 postings.
@@ -161,15 +161,9 @@ Before starting the main 515-posting annotation:
 
 ---
 
-## Intra-Annotator Stability (Step 5 of the workflow)
+## Quality Check
 
-After the main 515-posting pass, wait ≥ 1 week. Then:
-
-1. Re-annotate 50 random postings (use a fixed seed for reproducibility).
-2. Compute F1 of your re-annotations vs your original annotations.
-3. Report as *intra-annotator F1* in the paper. A value above 0.85 is considered reliable.
-
-Low intra-annotator F1 suggests the guidelines need tightening or the annotator was inconsistent (fatigue, learning effects).
+The gold set was annotated by a single human annotator against these guidelines; a guideline-conformance audit then corrected about 130 violations, most of them in the scope of `COMPANY`.
 
 ---
 
@@ -244,6 +238,6 @@ Each entity struct has `text`, `type`, `start`, `end` — identical to the teach
 - Date: April 2026
 - Guidelines version: 1.0
 - Annotation pass: blind (no teacher labels shown)
-- Tool: Label Studio (self-hosted via Podman)
+- Annotations held in: Label Studio (self-hosted via Podman)
 
 Report any issues discovered during annotation as a new section below; do not silently retrofit rules.

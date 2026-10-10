@@ -1,18 +1,14 @@
-# Distributed NER on Spark — Python dependencies
+# Distributed NER on Spark — Python dependencies (Python 3.11–3.12)
 #
 # Install into a project venv:
 #   python3 -m venv .venv && source .venv/bin/activate
+#   pip install torch --index-url https://download.pytorch.org/whl/cpu   # optional: CPU-only torch first
 #   pip install -r requirements.txt
 #   python -m spacy download en_core_web_lg
 #
-# Covers every import of the evaluation and training scripts under
-# pipeline/scripts/. The teacher-stage packages (anthropic, boto3) are only
-# needed to re-run LLM labelling on AWS Bedrock; all evaluation scripts run
-# without AWS credentials.
-
-# --- LLM teacher (AWS Bedrock) ---
-anthropic>=0.40.0
-boto3>=1.35.0
+# Covers every import of the evaluation scripts under pipeline/scripts/; none
+# needs AWS access or credentials. Retraining with train_jobbert_chunked.py
+# additionally needs: pip install accelerate datasets evaluate seqeval
 
 # --- Data wrangling ---
 numpy>=1.26.0
@@ -27,14 +23,11 @@ spacy-lookups-data>=1.0.5
 scikit-learn>=1.5.0
 
 # --- Transformer students, quantisation, Hub access ---
+torch>=2.1.0
 transformers>=4.44.0
 optimum[onnxruntime]>=1.22.0
 huggingface_hub>=0.25.0
 
-# --- Figures ---
+# --- Figures and configuration ---
 matplotlib>=3.9.0
-
-# --- Configuration and orchestration ---
-python-dotenv>=1.0.0
 PyYAML>=6.0
-tqdm>=4.66.0

@@ -3,10 +3,10 @@ Chunked-window training for JobBERT NER on long job postings.
 
 Motivation
 ----------
-The standard `train_jobbert.py` produces ONE training example per posting with
-`truncation=True, max_length=512`. Postings average ~800-1000 tokens, so the
+The v1 JobBERT students were trained with ONE example per posting
+(`truncation=True, max_length=512`). Postings average ~800-1000 tokens, so the
 classifier head only ever sees the first ~512 tokens of each posting at training
-time. The sliding-window INFERENCE ablation (2026-04-21) showed this is a
+time. The sliding-window INFERENCE ablation (bootstrap_ci_sliding.py) showed this is a
 training-time constraint, not an inference-time artefact: at inference, feeding
 later chunks to the trained head produces high-recall low-precision noise
 because the head was never trained on positions past 512 of a posting.
@@ -17,7 +17,7 @@ overlap), projecting the gold entity char-spans onto each window, and treating
 each window as an independent training example. Train-time and inference-time
 windowing match exactly (same window/stride, same boundary policy).
 
-Self-contained: no imports from `train_jobbert.py` or `evaluate_student.py`.
+Self-contained: no imports from the v1 training or evaluation code.
 The label list, BIO conversion, sliding logic, and end-of-training entity-set
 eval are all inlined. This is intentional --- the chunked experiment is a
 clean-room ablation, not an extension of the v1 training script.

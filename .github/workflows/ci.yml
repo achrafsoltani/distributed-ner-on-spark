@@ -40,9 +40,9 @@ jobs:
           python - <<'PY'
           import importlib.util, sys
           mods = [
-              "pandas", "pyarrow", "numpy", "duckdb", "sklearn",
+              "pandas", "pyarrow", "numpy", "duckdb", "sklearn", "torch",
               "transformers", "optimum", "spacy", "huggingface_hub",
-              "matplotlib", "dotenv", "tqdm", "anthropic", "boto3",
+              "matplotlib", "yaml",
           ]
           missing = [m for m in mods if importlib.util.find_spec(m) is None]
           if missing:

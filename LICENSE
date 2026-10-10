@@ -1,37 +1,48 @@
-DUAL LICENSE
+DUAL LICENCE
 ============
 
-This project uses dual licensing:
+This repository is released under two licences.
 
 1. CODE — Apache License 2.0
-   See LICENSE-CODE for the full text.
+   Full text: LICENSE-CODE
 
    Applies to:
-   - pipeline/ (Podman Compose, Hadoop config, scripts)
-   - poc/ (Python proof-of-concept code)
-   - Any .py, .sh, .yml, .xml configuration files
+   - pipeline/scripts/                    (evaluation, ablation and data-preparation scripts)
+   - pipeline/training/experiments/specs/ (training specifications)
+   - .github/workflows/                   (continuous-integration configuration)
+   - requirements.txt, .env.example
 
-2. RESEARCH CONTENT — Creative Commons Attribution-NonCommercial 4.0 International (CC BY-NC 4.0)
-   See LICENSE-RESEARCH for the full text.
+2. RESEARCH CONTENT — Creative Commons Attribution-NonCommercial 4.0
+   International (CC BY-NC 4.0)
+   Full text: LICENSE-RESEARCH
 
    Applies to:
-   - paper/ (LaTeX sources, compiled paper.pdf, bibliography)
-   - research-proposal.md / .pdf (EN + FR)
-   - architecture.md / .pdf
-   - presentation.md / .pdf
-   - IMPLEMENTATION-GUIDE.md / .pdf
-   - images/ (SVG and PNG diagrams)
-   - README.md
+   - pipeline/annotation/                 (annotation guidelines)
+   - pipeline/training/sonnet/gold-standoff.parquet and
+     pipeline/training/haiku/gold-standoff.parquet (the stand-off gold annotations)
+   - pipeline/labels-public/              (teacher predictions on the gold set)
+   - pipeline/output-sample/              (sample of the per-posting output of the Spark run)
+   - README.md and the other documentation
+
+The trained models published on the Hugging Face Hub under AchrafSoltani/* are
+released under CC BY-NC 4.0; each model card carries its base model's notice.
+
+POSTING TEXT
+============
+
+No posting text is distributed here. The postings come from the Kaggle release
+asaniczka/1-3m-linkedin-jobs-and-skills-2024 and remain under its terms. The
+stand-off annotations and the teacher predictions record each entity's span
+string and character offsets into that text.
 
 COMMERCIAL USE OF RESEARCH CONTENT
 ==================================
 
-For commercial licensing of the research content (paper, diagrams, methodology),
-please contact the author:
+For commercial licensing of the research content, please contact the author:
 
   Achraf SOLTANI
   achraf.soltani@pm.me
   https://www.achrafsoltani.com
 
 Copyright (c) 2026 Achraf SOLTANI. All rights reserved for content not covered
-by the above licenses.
+by the above licences.

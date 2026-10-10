@@ -30,9 +30,8 @@ Window strategy
 
 Model source
 ------------
-`--model-path` accepts either a local filesystem path (the Phase 6 output
-directory) or a Hugging Face Hub ID (e.g. `AchrafSoltani/jobbert-ner-haiku-v1`).
-The AWS re-run uses Hub paths to avoid staging model weights on S3.
+`--model-path` accepts either a local model directory or a Hugging Face Hub ID
+(e.g. `AchrafSoltani/jobbert-ner-haiku-v1`).
 
 Usage
 -----

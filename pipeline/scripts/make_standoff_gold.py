@@ -1,28 +1,23 @@
-"""Produce genuinely stand-off gold artefacts, and a rehydrator to rebuild them.
+"""Stand-off gold annotations: rehydrate them against the corpus, or write them.
 
-The paper states twice that the posting text is not re-hosted, but the published
-`pipeline/training/{sonnet,haiku}/gold.parquet` each carry a `job_summary`
-column holding the full posting body (mean ~4,000 characters over 516 + 515
-postings). That is re-hosting LinkedIn text under the repository's licences,
-and it contradicts both the Data-availability section and the Ethics section.
+The gold set ships as stand-off files: job_link plus the entity list (type,
+character offsets and span string), with no posting text. The posting text
+stays under the source corpus's terms, so each user rebuilds the text-bearing
+gold.parquet from their own copy of the Kaggle release.
 
-This script resolves it in the direction the paper already claims, rather than
-by weakening the claim:
+  rehydrate rebuilds pipeline/training/{teacher}/gold.parquet, which every
+            text-based evaluation script reads, by joining the stand-off file
+            to job_summary.csv from the Kaggle release
+            asaniczka/1-3m-linkedin-jobs-and-skills-2024 (5.1 GB).
+  make      the inverse: writes gold-standoff.parquet from a text-bearing
+            gold.parquet (overwriting the shipped stand-off file).
 
-  make      writes gold-standoff-{sonnet,haiku}.parquet — job_link plus the
-            entity list with character offsets, and no posting text. These are
-            the files intended for publication.
-  rehydrate rebuilds a working gold.parquet by joining the stand-off file to the
-            consumer's own Kaggle download, so reproduction still works from a
-            fresh clone once the source corpus is in place.
-
-    python -m pipeline.scripts.make_standoff_gold make
     python -m pipeline.scripts.make_standoff_gold rehydrate --teacher haiku \
-        --source data-primary/<kaggle-postings>.csv
+        --source /path/to/job_summary.csv
 
-Offsets are verified against the text on both paths: `text[start:end] == text`
-must hold for every span, so a rehydrated file is provably identical in content
-to the one used for the published numbers.
+Offsets are verified against the text on both paths: text[start:end] must equal
+the span string for every span, so a rehydrated file is provably identical in
+content to the one the published numbers were computed on.
 """
 from __future__ import annotations
 
@@ -73,8 +68,8 @@ def cmd_make(args: argparse.Namespace) -> int:
               f"({status}) -> {out.relative_to(ROOT)}")
         if bad:
             rc = 1
-    print("\nThese stand-off files carry no posting text and are the ones to publish.\n"
-          "Remove the text-bearing gold.parquet from the public tree before the next push.")
+    print("\nThese stand-off files carry no posting text. The text-bearing gold.parquet\n"
+          "is git-ignored; do not redistribute it.")
     return rc
 
 
@@ -86,7 +81,7 @@ def cmd_rehydrate(args: argparse.Namespace) -> int:
     source = Path(args.source)
     if not source.exists():
         print(f"error: source corpus {source} not found. Download the Kaggle "
-              f"redistribution and pass its postings CSV via --source.")
+              f"release and pass its job_summary.csv via --source.")
         return 1
 
     ann = pd.read_parquet(standoff)
@@ -95,11 +90,17 @@ def cmd_rehydrate(args: argparse.Namespace) -> int:
     text_col = next((c for c in ("job_summary", "job_description", "description")
                      if c in head.columns), None)
     if text_col is None:
-        print(f"error: no recognised text column in {source} (saw {list(head.columns)})")
+        print(f"error: no recognised text column in {source} (saw {list(head.columns)}); "
+              f"pass job_summary.csv, the file of the Kaggle release that holds the posting text")
         return 1
     usecols = ["job_link", text_col]
 
-    src = pd.read_csv(source, usecols=usecols).rename(columns={text_col: "job_summary"})
+    # Stream the 5.1 GB CSV in chunks and keep only the gold postings, so memory
+    # stays small; file order is preserved, so the first duplicate still wins.
+    wanted = set(ann["job_link"])
+    chunks = pd.read_csv(source, usecols=usecols, chunksize=100_000)
+    src = pd.concat([c[c["job_link"].isin(wanted)] for c in chunks], ignore_index=True)
+    src = src.rename(columns={text_col: "job_summary"})
     merged = ann.merge(src.drop_duplicates("job_link"), on="job_link", how="left")
     missing = int(merged["job_summary"].isna().sum())
     if missing:
@@ -125,7 +126,8 @@ def main() -> int:
     sub.add_parser("make", help="write text-free stand-off gold files")
     r = sub.add_parser("rehydrate", help="rebuild gold.parquet from your own corpus copy")
     r.add_argument("--teacher", choices=("sonnet", "haiku"), required=True)
-    r.add_argument("--source", required=True, help="path to the Kaggle postings CSV")
+    r.add_argument("--source", required=True,
+                   help="path to job_summary.csv from the Kaggle release")
     args = ap.parse_args()
     return cmd_make(args) if args.cmd == "make" else cmd_rehydrate(args)
 

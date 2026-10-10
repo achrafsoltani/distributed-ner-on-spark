@@ -1,18 +1,21 @@
 """
 Evaluate a trained student model against dev and gold sets.
 
-Uses the same entity-level (text, type) set matching as from_label_studio.py
-to ensure teacher-vs-gold and student-vs-gold metrics are comparable.
+Uses the entity-level (text, type) set matching behind every score in the paper,
+so teacher-vs-gold and student-vs-gold metrics are comparable.
 
-Can be used standalone or imported by train_spacy.py / train_jobbert.py.
+This is the training-time evaluator; it can be used standalone or imported. The
+F1 values and CIs reported in the paper come from bootstrap_ci.py, which
+truncates transformer inputs through the tokenizer (max_length=510); this script
+passes the first 10,000 characters to the pipeline instead, so its JobBERT and
+ONNX scores differ. Its JobBERT loader runs on GPU 0.
 
-Usage:
+Usage (rehydrate the gold set first; see the README):
     python -m pipeline.scripts.evaluate_student \
         --model-type spacy \
-        --model-path outputs/s1_spacy_sonnet/model-best \
-        --dev pipeline/training/sonnet/dev.parquet \
+        --model-path /path/to/local/model-dir \
         --gold pipeline/training/sonnet/gold.parquet \
-        --output outputs/s1_spacy_sonnet/eval.json
+        --output eval/s1_spacy_sonnet.json
 """
 
 from __future__ import annotations
@@ -31,7 +34,7 @@ logger = logging.getLogger(__name__)
 
 
 def entity_set_from_list(entities: list[dict]) -> set[tuple[str, str]]:
-    """Build a (text, type) set from entity dicts, matching from_label_studio.py."""
+    """Build a (text, type) set from entity dicts."""
     return {(e["text"], e["type"]) for e in entities if e.get("text") and e.get("type")}
 
 

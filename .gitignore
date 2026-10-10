@@ -23,3 +23,16 @@ xet/
 .ipynb_checkpoints/
 *.swp
 *.swo
+
+# Reproduction outputs. Everything the scripts write directly under
+# pipeline/training/ (results, figures, rehydrated files) stays local.
+pipeline/training/*
+!pipeline/training/haiku/
+!pipeline/training/sonnet/
+!pipeline/training/experiments/
+pipeline/training/experiments/outputs/
+# Rehydrated gold files contain posting text under the Kaggle release's terms:
+# never commit or redistribute them.
+pipeline/training/*/gold.parquet
+# B0's out-of-fold predictions hold span strings from the posting text.
+pipeline/training/gold_only_baseline_predictions.json

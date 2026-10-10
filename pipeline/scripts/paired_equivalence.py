@@ -1,10 +1,9 @@
 """Paired bootstrap + equivalence bounds for the matched-budget A/B (RQ1).
 
-The published analysis compared S2, B0 and Teacher Haiku through their *marginal*
-bootstrap confidence intervals and concluded "indistinguishable" from the fact
-that the intervals overlap. That is not a valid test: overlapping CIs neither
-establish equivalence nor rule out a real difference, and the conclusion as
-drawn accepts the null from a failure to reject.
+Comparing S2, B0 and Teacher Haiku through their *marginal* bootstrap confidence
+intervals is not a valid test: overlapping CIs neither establish equivalence nor
+rule out a real difference, and reading "indistinguishable" from the overlap
+accepts the null from a failure to reject.
 
 All three systems are evaluated on the *same* 515 gold postings
 (pipeline/training/haiku/gold.parquet), so the correct instrument is a paired
@@ -16,10 +15,11 @@ is then read directly off the interval bounds, which is an equivalence bound
 rather than a p-value.
 
 Systems compared, all on the identical posting set:
-  B0  gold-only spaCy, 5-fold CV, out-of-fold predictions (replicates
-      gold_only_baseline.py exactly: KFold(5, shuffle, seed 42), 15 iters,
-      dropout 0.2, batch 8, per-fold seed 42+fold_idx)
-  S2  spaCy fine-tuned on Haiku labels (pipeline/training/experiments/outputs/
+  B0  the spaCy students' pipeline trained on the gold set alone, 5-fold CV:
+      the out-of-fold predictions written by gold_only_baseline.py (run here
+      first if they are absent), so the marginal and the paired analyses
+      score one and the same B0
+  S2  spaCy trained on Haiku labels (pipeline/training/experiments/outputs/
       s2_spacy_haiku/model-best)
   TH  Teacher Haiku raw predictions on the gold postings
 
@@ -34,20 +34,18 @@ From the public package, rebuild the text-bearing gold.parquet first (the
 release ships stand-off annotations only):
 
     python -m pipeline.scripts.make_standoff_gold rehydrate --teacher haiku \
-        --source <path to the Kaggle postings CSV>
+        --source <path to job_summary.csv from the Kaggle release>
 """
 from __future__ import annotations
 
 import json
-from collections import Counter
 from pathlib import Path
 
 import numpy as np
 import pandas as pd
 import spacy
-from sklearn.model_selection import KFold
-from spacy.tokens import Doc, Span
-from spacy.training import Example
+
+from pipeline.scripts import gold_only_baseline as b0
 
 ROOT = Path(__file__).resolve().parents[2]
 GOLD = ROOT / "pipeline/training/haiku/gold.parquet"
@@ -57,24 +55,14 @@ HAIKU_LABELS = ROOT / "pipeline/labels/haiku"
 HAIKU_PUBLIC = ROOT / "pipeline/labels-public/haiku/gold-predictions.jsonl"
 OUT = ROOT / "pipeline/training/paired_equivalence.json"
 
-N_FOLDS = 5
-N_ITER = 15
-DROPOUT = 0.2
 SEED = 42
-BATCH_SIZE = 8
 N_BOOTSTRAP = 10_000
 
 
 # --------------------------------------------------------------------------- #
 # scoring primitives (identical semantics to gold_only_baseline.py)
 # --------------------------------------------------------------------------- #
-def entity_set(entities) -> set:
-    if entities is None:
-        return set()
-    if hasattr(entities, "tolist"):
-        entities = entities.tolist()
-    return {(e["text"], e["type"]) for e in entities
-            if isinstance(e, dict) and e.get("text") and e.get("type")}
+entity_set = b0.entity_set
 
 
 def contribs_for(gold_map: dict, pred_map: dict, links: list[str]) -> np.ndarray:
@@ -107,108 +95,33 @@ def f1_vector(arr: np.ndarray, idx: np.ndarray) -> np.ndarray:
 
 
 # --------------------------------------------------------------------------- #
-# B0: replicate the 5-fold CV, keeping out-of-fold predictions
+# B0: the out-of-fold predictions of gold_only_baseline.py
 # --------------------------------------------------------------------------- #
-def make_docs(df: pd.DataFrame, nlp) -> list[Doc]:
-    docs = []
-    for _, row in df.iterrows():
-        text = row["job_summary"]
-        doc = nlp.make_doc(text)
-        ents, seen = [], set()
-        entities = row["entities"]
-        if hasattr(entities, "tolist"):
-            entities = entities.tolist()
-        for e in entities:
-            if not (isinstance(e, dict) and e.get("text") and e.get("type")):
-                continue
-            i = text.find(e["text"])
-            if i == -1 or (i, i + len(e["text"])) in seen:
-                continue
-            span = doc.char_span(i, i + len(e["text"]), label=e["type"],
-                                 alignment_mode="contract")
-            if span is None:
-                continue
-            ents.append(span)
-            seen.add((i, i + len(e["text"])))
-        ents.sort(key=lambda s: (s.start, -(s.end - s.start)))
-        filtered: list[Span] = []
-        taken: set[int] = set()
-        for s in ents:
-            if any(i in taken for i in range(s.start, s.end)):
-                continue
-            filtered.append(s)
-            taken.update(range(s.start, s.end))
-        try:
-            doc.set_ents(filtered)
-        except Exception:
-            pass
-        docs.append(doc)
-    return docs
-
-
-def train_fold(train_df: pd.DataFrame, labels: set, seed: int):
-    nlp = spacy.load("en_core_web_lg",
-                     disable=["tagger", "attribute_ruler", "lemmatizer", "parser"])
-    if "ner" in nlp.pipe_names:
-        nlp.remove_pipe("ner")
-    ner = nlp.add_pipe("ner")
-    for lab in labels:
-        ner.add_label(lab)
-    docs = make_docs(train_df, nlp)
-    examples = [Example.from_dict(
-        d, {"entities": [(s.start_char, s.end_char, s.label_) for s in d.ents]})
-        for d in docs]
-    # spacy-lookups-data 1.0.5 no longer ships an `en` lexeme_norm table, which
-    # the default initialize config requests. The table is irrelevant to NER
-    # training, so it is disabled rather than substituted.
-    nlp.config["initialize"]["lookups"] = None
-    optimizer = nlp.initialize(lambda: examples)
-    rng = np.random.default_rng(seed)
-    for i in range(N_ITER):
-        rng.shuffle(examples)
-        losses = {}
-        for start in range(0, len(examples), BATCH_SIZE):
-            nlp.update(examples[start:start + BATCH_SIZE], drop=DROPOUT,
-                       sgd=optimizer, losses=losses)
-        print(f"    iter {i+1:2d}/{N_ITER}: loss_ner={losses.get('ner', 0):.1f}",
-              flush=True)
-    return nlp
-
-
-def predict(nlp, df: pd.DataFrame) -> dict:
-    out = {}
-    for link, doc in zip(df["job_link"].tolist(),
-                         nlp.pipe(df["job_summary"].tolist(), batch_size=16)):
-        out[link] = [{"text": e.text, "type": e.label_} for e in doc.ents]
-    return out
-
-
-def b0_out_of_fold(gold_df: pd.DataFrame, labels: set) -> tuple[dict, list[float]]:
-    preds: dict = {}
-    per_fold_f1: list[float] = []
-    kf = KFold(n_splits=N_FOLDS, shuffle=True, random_state=SEED)
-    for fold_idx, (tr, te) in enumerate(kf.split(gold_df)):
-        train_df = gold_df.iloc[tr].reset_index(drop=True)
-        test_df = gold_df.iloc[te].reset_index(drop=True)
-        print(f"\n[B0 fold {fold_idx+1}/{N_FOLDS}] train={len(train_df)} test={len(test_df)}",
-              flush=True)
-        nlp = train_fold(train_df, labels, seed=SEED + fold_idx)
-        fold_preds = predict(nlp, test_df)
-        preds.update(fold_preds)
-        gm = dict(zip(test_df["job_link"], test_df["entities"]))
-        arr = contribs_for(gm, fold_preds, list(test_df["job_link"]))
-        per_fold_f1.append(round(f1_of(arr), 4))
-        print(f"  fold F1={per_fold_f1[-1]}", flush=True)
-    return preds, per_fold_f1
+def b0_out_of_fold(gold_df: pd.DataFrame) -> tuple[dict, list[float], float]:
+    """B0's out-of-fold predictions, per-fold F1 and aggregate F1, exactly as
+    gold_only_baseline.py produced them for this gold set."""
+    if not b0.PREDICTIONS.exists():
+        print(f"  {b0.PREDICTIONS.relative_to(ROOT)} not found; running "
+              f"gold_only_baseline first", flush=True)
+        b0.main()
+    rec = json.loads(b0.PREDICTIONS.read_text(encoding="utf-8"))
+    summary = json.loads(b0.OUT.read_text(encoding="utf-8"))
+    fingerprint = b0.gold_fingerprint(gold_df)
+    if rec["gold_fingerprint"] != fingerprint or summary.get("gold_fingerprint") != fingerprint:
+        raise SystemExit(
+            f"B0 predictions were made on a different gold set than {GOLD}; "
+            f"re-run python -m pipeline.scripts.gold_only_baseline")
+    return rec["predictions"], rec["fold_f1"], summary["aggregate"]["F1"]
 
 
 def teacher_haiku_preds(links: set[str]) -> dict:
     """Raw Haiku teacher predictions for the gold postings.
 
-    Resolution order: the full private batch outputs (internal mirror), else the
-    published per-gold-posting subset in pipeline/labels-public/. The two were
-    verified identical for all 515 gold links (entity lists compare equal
-    record-for-record, 2026-08-16), so the fallback cannot change any score.
+    Resolution order: the full teacher batch outputs, which are not part of the
+    public package, else the published per-gold-posting subset in
+    pipeline/labels-public/. The two were verified identical for all 515 gold
+    links (entity lists compare equal record-for-record, 2026-08-16), so the
+    fallback cannot change any score.
     """
     sources = sorted(HAIKU_LABELS.glob("batch_*.jsonl")) or [HAIKU_PUBLIC]
     if not sources[0].exists():
@@ -256,14 +169,7 @@ def main() -> None:
     gold_df = pd.read_parquet(GOLD).reset_index(drop=True)
     links = gold_df["job_link"].tolist()
     gold_map = dict(zip(gold_df["job_link"], gold_df["entities"]))
-    labels = set()
-    for ents in gold_df["entities"]:
-        if hasattr(ents, "tolist"):
-            ents = ents.tolist()
-        for e in ents:
-            if isinstance(e, dict) and e.get("type"):
-                labels.add(e["type"])
-    print(f"gold postings: {len(gold_df)} | labels: {sorted(labels)}", flush=True)
+    print(f"gold postings: {len(gold_df)}", flush=True)
 
     print("\n=== S2 (spaCy on Haiku labels) ===", flush=True)
     if S2_MODEL.exists():
@@ -275,18 +181,23 @@ def main() -> None:
         print(f"  Local model not found at {S2_MODEL}; pulling from HF Hub: {S2_HUB_ID}",
               flush=True)
         s2 = spacy.load(snapshot_download(repo_id=S2_HUB_ID))
-    s2_preds = predict(s2, gold_df)
+    s2_preds = b0.predict(s2, gold_df)
 
     print("\n=== Teacher Haiku (raw) ===", flush=True)
     th_preds = teacher_haiku_preds(set(links))
     print(f"matched teacher records: {len(th_preds)}/{len(links)}", flush=True)
 
     print("\n=== B0 (gold-only, 5-fold CV) ===", flush=True)
-    b0_preds, per_fold_f1 = b0_out_of_fold(gold_df, labels)
+    b0_preds, per_fold_f1, b0_reported_f1 = b0_out_of_fold(gold_df)
+    print(f"out-of-fold predictions: {len(b0_preds)}/{len(links)}", flush=True)
 
     A_S2 = contribs_for(gold_map, s2_preds, links)
     A_B0 = contribs_for(gold_map, b0_preds, links)
     A_TH = contribs_for(gold_map, th_preds, links)
+    # One B0 for both analyses: the marginal F1 recomputed here from the shared
+    # predictions must equal the one gold_only_baseline.py reported.
+    assert round(f1_of(A_B0), 4) == b0_reported_f1, (
+        f"B0 F1 {f1_of(A_B0):.4f} here vs {b0_reported_f1} in {b0.OUT.name}")
 
     rng = np.random.default_rng(SEED)
     idx = rng.integers(0, len(links), size=(N_BOOTSTRAP, len(links)))
@@ -296,6 +207,8 @@ def main() -> None:
         "n_bootstrap": N_BOOTSTRAP,
         "seed": SEED,
         "spacy_version": spacy.__version__,
+        "b0_source": str(b0.PREDICTIONS.relative_to(ROOT)),
+        "gold_fingerprint": b0.gold_fingerprint(gold_df),
         "marginal_f1": {
             "S2": round(f1_of(A_S2), 4),
             "B0": round(f1_of(A_B0), 4),

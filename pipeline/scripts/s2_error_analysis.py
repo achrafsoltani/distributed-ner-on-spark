@@ -1,8 +1,9 @@
 """
-Error analysis on S2 (spaCy + Haiku teacher) against the 516-posting gold set.
+Error analysis on S2 (spaCy + Haiku teacher) against the 515-posting
+Haiku-side gold file.
 
-Categorises false positives and false negatives into failure-mode buckets and
-writes both a JSON summary and a paper-ready table of examples.
+Counts false positives and false negatives per entity type and writes a JSON
+summary with the most frequent texts and a small sample of examples per type.
 
 Usage: python -m pipeline.scripts.s2_error_analysis
 """

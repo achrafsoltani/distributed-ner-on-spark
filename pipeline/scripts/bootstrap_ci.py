@@ -110,10 +110,11 @@ def teacher_predictions(teacher: str) -> dict:
 
     Resolution order:
       1. `pipeline/labels-public/{teacher}/gold-predictions.jsonl` (516/515 records,
-         shipped in the public reproducibility package — sufficient to reproduce
-         the teacher-vs-gold CIs in Table 5).
-      2. `pipeline/labels/{teacher}/batch_*.jsonl` (5K full records, internal mirror only).
-      3. Loud failure with a pointer at the paper's Data and Code Availability section.
+         shipped in this package; sufficient to reproduce the teacher-vs-gold CIs,
+         and teacher_f1_standoff.py computes them without posting text).
+      2. `pipeline/labels/{teacher}/batch_*.jsonl` (the full 5,000-posting teacher
+         label files, which are not part of this package).
+      3. Loud failure with a pointer at the README.
     """
     preds = {}
     public_file = ROOT / f"pipeline/labels-public/{teacher}/gold-predictions.jsonl"
@@ -133,9 +134,9 @@ def teacher_predictions(teacher: str) -> dict:
         return preds
     raise FileNotFoundError(
         f"No teacher-{teacher} predictions found. Expected one of:\n"
-        f"  (1) {public_file.relative_to(ROOT)}  (public-package gold-set predictions)\n"
-        f"  (2) pipeline/labels/{teacher}/batch_*.jsonl  (internal-mirror full labels)\n"
-        f"See the paper's Data and Code Availability section."
+        f"  (1) {public_file.relative_to(ROOT)}  (gold-set predictions shipped in this package)\n"
+        f"  (2) pipeline/labels/{teacher}/batch_*.jsonl  (full teacher label files, not distributed)\n"
+        f"See the README."
     )
 
 

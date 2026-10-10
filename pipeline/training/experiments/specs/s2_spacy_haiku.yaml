@@ -1,3 +1,6 @@
+# Values as used to train the published model. Its exact spaCy configuration,
+# including the warm-up schedule (50 steps, linear decay over 20,000 steps), is the
+# config.cfg shipped with the model on the Hugging Face Hub.
 data:
   dev: pipeline/training/haiku/dev.parquet
   gold: pipeline/training/haiku/gold.parquet
@@ -12,13 +15,13 @@ hyperparameters:
     compound: 1.001
     start: 100
     stop: 1000
-  dropout: 0.2
-  epochs: 30
-  eval_frequency: 200
+  dropout: 0.1
+  epochs: 20
+  eval_frequency: 500
   gpu_id: 0
   learn_rate: 0.001
   optimizer: Adam
-  patience: 5
+  patience: 1000
 model:
   base: en_core_web_lg
   pipeline_components:
