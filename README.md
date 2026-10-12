@@ -12,11 +12,11 @@ Ten students are on the Hugging Face Hub. The six v1 students cover three archit
 |---|---|---|---|---|
 | S1 | spaCy `en_core_web_lg` | Claude Sonnet 4.6 | 0.508 [0.494, 0.523] | [`AchrafSoltani/spacy-lg-jobposting-ner-sonnet-v1`](https://huggingface.co/AchrafSoltani/spacy-lg-jobposting-ner-sonnet-v1) |
 | **S2** | spaCy `en_core_web_lg` | Claude Haiku 4.5 | **0.534 [0.517, 0.551]** | [`AchrafSoltani/spacy-lg-jobposting-ner-haiku-v1`](https://huggingface.co/AchrafSoltani/spacy-lg-jobposting-ner-haiku-v1) **(recommended)** |
-| S3 | `jjzha/jobbert-base-cased` | Claude Sonnet 4.6 | 0.298 [0.282, 0.314] | [`AchrafSoltani/jobbert-ner-sonnet-v1`](https://huggingface.co/AchrafSoltani/jobbert-ner-sonnet-v1) |
+| S3 | `jjzha/jobbert-base-cased` | Claude Sonnet 4.6 | 0.298 [0.282, 0.313] | [`AchrafSoltani/jobbert-ner-sonnet-v1`](https://huggingface.co/AchrafSoltani/jobbert-ner-sonnet-v1) |
 | S4 | `jjzha/jobbert-base-cased` | Claude Haiku 4.5 | 0.300 [0.284, 0.316] | [`AchrafSoltani/jobbert-ner-haiku-v1`](https://huggingface.co/AchrafSoltani/jobbert-ner-haiku-v1) |
-| S5 | S3 → ONNX int8 | Claude Sonnet 4.6 | 0.284 [0.269, 0.299] | [`AchrafSoltani/jobbert-ner-sonnet-v1-onnx`](https://huggingface.co/AchrafSoltani/jobbert-ner-sonnet-v1-onnx) |
-| S6 | S4 → ONNX int8 | Claude Haiku 4.5 | 0.283 [0.268, 0.299] | [`AchrafSoltani/jobbert-ner-haiku-v1-onnx`](https://huggingface.co/AchrafSoltani/jobbert-ner-haiku-v1-onnx) |
-| S3′ | JobBERT, chunked-window training (v2) | Claude Sonnet 4.6 | 0.326 [0.312, 0.339] | [`AchrafSoltani/jobbert-ner-sonnet-v2`](https://huggingface.co/AchrafSoltani/jobbert-ner-sonnet-v2) |
+| S5 | S3 → ONNX int8 | Claude Sonnet 4.6 | 0.283 [0.269, 0.299] | [`AchrafSoltani/jobbert-ner-sonnet-v1-onnx`](https://huggingface.co/AchrafSoltani/jobbert-ner-sonnet-v1-onnx) |
+| S6 | S4 → ONNX int8 | Claude Haiku 4.5 | 0.283 [0.267, 0.299] | [`AchrafSoltani/jobbert-ner-haiku-v1-onnx`](https://huggingface.co/AchrafSoltani/jobbert-ner-haiku-v1-onnx) |
+| S3′ | JobBERT, chunked-window training (v2) | Claude Sonnet 4.6 | 0.325 [0.312, 0.339] | [`AchrafSoltani/jobbert-ner-sonnet-v2`](https://huggingface.co/AchrafSoltani/jobbert-ner-sonnet-v2) |
 | S4′ | JobBERT, chunked-window training (v2) | Claude Haiku 4.5 | 0.328 [0.313, 0.344] | [`AchrafSoltani/jobbert-ner-haiku-v2`](https://huggingface.co/AchrafSoltani/jobbert-ner-haiku-v2) |
 | S5′ | S3′ → ONNX int8 | Claude Sonnet 4.6 | 0.302 [0.289, 0.315] | [`AchrafSoltani/jobbert-ner-sonnet-v2-onnx`](https://huggingface.co/AchrafSoltani/jobbert-ner-sonnet-v2-onnx) |
 | S6′ | S4′ → ONNX int8 | Claude Haiku 4.5 | 0.309 [0.294, 0.324] | [`AchrafSoltani/jobbert-ner-haiku-v2-onnx`](https://huggingface.co/AchrafSoltani/jobbert-ner-haiku-v2-onnx) |

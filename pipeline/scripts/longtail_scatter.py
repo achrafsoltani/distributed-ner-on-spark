@@ -107,9 +107,11 @@ def main():
 
     # Mark the 14 ms smoke-test mean and 86.4 ms full-run mean on both panels
     for ax in (ax1, ax2):
-        ax.axhline(14.1, color="grey", linestyle="--", linewidth=1, alpha=0.7)
+        # 92.8 ms: the smoke summary recorded the two averages swapped (14.1 was the mean
+        # entity count, not the time; see agents/scaler.py, fixed 2026-10-12).
+        ax.axhline(92.8, color="grey", linestyle="--", linewidth=1, alpha=0.7)
         ax.axhline(86.4, color="red", linestyle="--", linewidth=1, alpha=0.7)
-        ax.text(ax.get_xlim()[0]*1.5, 14.1*1.05, "10K smoke mean 14.1 ms",
+        ax.text(ax.get_xlim()[0]*1.5, 92.8*1.05, "10K smoke mean 92.8 ms",
                 fontsize=8, color="grey")
         ax.text(ax.get_xlim()[0]*1.5, 86.4*1.05, "Population mean 86.4 ms",
                 fontsize=8, color="red")

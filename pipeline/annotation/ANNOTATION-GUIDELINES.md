@@ -209,7 +209,7 @@ Added 2026-04-15. Timezone identifiers in job postings almost always function as
 | `"must be available during EST business hours for customer calls"` | `EST` → LOCATION (marginal; lean inclusive) |
 | `"9-5 ET shift at our Boston office"` | `ET` → do not tag (pure schedule metadata); `Boston` → LOCATION |
 
-**Why this matters for downstream metrics:** the two LLM teachers (Sonnet 4.6 and Haiku 4.5) labelled without explicit timezone guidance. Expect inconsistency between teachers on this edge case. This reduces teacher-vs-gold F1 but is a valid finding about LLM teacher schema drift on edge cases — flag it in the paper rather than try to reconcile.
+**Why this matters for downstream metrics:** the two LLM teachers (Sonnet 4.6 and Haiku 4.5) labelled without explicit timezone guidance. Expect inconsistency between teachers on this edge case. This lowers teacher-vs-gold F1 on this edge case; it is a genuine case of schema drift between the LLM teachers and is reported as such rather than reconciled.
 
 ### Soft skills threshold
 
